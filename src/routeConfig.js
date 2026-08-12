@@ -1,6 +1,6 @@
 export const REGULAR_ROUTES = [
-  { route: 'J01', vehicle: '56', capacity: 45, stops: [['Brisa da Serra (Posto Médico)','04:58'],['Parque Residencial (Praça Pequena)','05:10'],['João Paulo II (Mercadinho Brasil)','05:12'],["Dom José Rodrigues - Próximo a Caixa D'água",'05:22'],['Codevasf - Rua Alecrim - Big Farma','05:28'],['Av. Girassol (Codevasf)','05:30'],['Argemiro (Em frente à Escola)','05:31'],['Piranga 02 (Em frente à Feirinha)','05:31'],['Piranga 01 (Bar de Neide)','05:32'],['Av. Quidé (Em frente à Escola)','05:37'],['Av. Quidé (Pizzaria Alves)','05:38'],['Penha (Atrás do Cemitério)','05:42'],['JOÃO XXII - Rotatória','05:48'],['São Luís (Açaí)','05:50'],['Antigo Mestre dos Sucos (próx. Rodoviária)','05:58'],['Posto BR - Av. da Integração (Próximo Academia)','06:01'],['Abaré Radiadores (Av. Sete de Setembro)','06:05']] },
-  { route: 'J02', vehicle: '59', capacity: 45, stops: [['Alto da Aliança (Padaria Vitória)','05:15'],['Castelo Branco - SAMU','05:19'],['Tabuleiro Rua 11','05:25'],['Tabuleiro Rua 11','05:26'],['Novo Encontro Rua das Algarobas (Praça Tober)','05:38'],['Novo Encontro (Praça do Ovo)','05:39'],['Adolfo Viana (Posto Surubim)','05:43'],['Av. Guararapes Petrolina (Vale da Sorte)','05:50'],['Av. Guararapes (Praça das Algarobas)','05:52'],['Av. Monsenhor Sampaio (G Barbosa)','05:55'],['Av. Monsenhor Sampaio (Posto Big Brother)','05:58'],['BR-122 (Hotel Rio Belo)','06:00'],['BR-428 (Ponto de ônibus)','06:01'],['Vila Marcela (Zé Matuto)','06:05'],['BR 428 Posto Paizão','06:07'],['BR 428 (Pousada Garden)','06:09']] },
+  { route: 'J01', city: 'Juazeiro', vehicle: '56', capacity: 45, stops: [['Brisa da Serra (Posto Médico)','04:58'],['Parque Residencial (Praça Pequena)','05:10'],['João Paulo II (Mercadinho Brasil)','05:12'],["Dom José Rodrigues - Próximo a Caixa D'água",'05:22'],['Codevasf - Rua Alecrim - Big Farma','05:28'],['Av. Girassol (Codevasf)','05:30'],['Argemiro (Em frente à Escola)','05:31'],['Piranga 02 (Em frente à Feirinha)','05:31'],['Piranga 01 (Bar de Neide)','05:32'],['Av. Quidé (Em frente à Escola)','05:37'],['Av. Quidé (Pizzaria Alves)','05:38'],['Penha (Atrás do Cemitério)','05:42'],['JOÃO XXII - Rotatória','05:48'],['São Luís (Açaí)','05:50'],['Antigo Mestre dos Sucos (próx. Rodoviária)','05:58'],['Posto BR - Av. da Integração (Próximo Academia)','06:01'],['Abaré Radiadores (Av. Sete de Setembro)','06:05']] },
+  { route: 'J02', city: 'Juazeiro', vehicle: '59', capacity: 45, stops: [['Alto da Aliança (Padaria Vitória)','05:15'],['Castelo Branco - SAMU','05:19'],['Tabuleiro Rua 11','05:25'],['Tabuleiro Rua 11','05:26'],['Novo Encontro Rua das Algarobas (Praça Tober)','05:38'],['Novo Encontro (Praça do Ovo)','05:39'],['Adolfo Viana (Posto Surubim)','05:43'],['Av. Guararapes Petrolina (Vale da Sorte)','05:50'],['Av. Guararapes (Praça das Algarobas)','05:52'],['Av. Monsenhor Sampaio (G Barbosa)','05:55'],['Av. Monsenhor Sampaio (Posto Big Brother)','05:58'],['BR-122 (Hotel Rio Belo)','06:00'],['BR-428 (Ponto de ônibus)','06:01'],['Vila Marcela (Zé Matuto)','06:05'],['BR 428 Posto Paizão','06:07'],['BR 428 (Pousada Garden)','06:09']] },
   { route: 'L01', vehicle: '58', capacity: 45, stops: [['Auto Grande','05:35'],['Bella','05:37'],['Morada Nova','05:40'],['Estátua','05:42'],['Av. Nilo Coelho (Borracharia)','05:44'],['BR 428 (Placa)','05:46']] },
   { route: 'L02', vehicle: '62', capacity: 45, stops: [['Bairro do Vasco (Juca Som)','05:40'],['Bairro do Vasco (Saída)','05:41'],['Cohab Velha','05:43'],['Padaria Changai','05:44'],['BR 428 (Placa)','05:46']] },
   { route: 'L03', vehicle: '95', capacity: 48, stops: [['Posto Fiscal','05:42'],['Izacolândia (Praça)','05:45'],['BR 428 (Três Postes)','05:49']] },
@@ -15,6 +15,7 @@ export const REGULAR_ROUTES = [
 ];
 
 REGULAR_ROUTES.forEach((route) => {
+  route.city = { J: 'Juazeiro', P: 'Petrolina', N: 'Nova Descoberta', L: 'Lagoa Grande' }[route.route[0]] || '';
   route.stops = route.stops.map(([name, time], index) => ({ number: index + 1, name, time }));
   route.stopCount = route.stops.length;
   route.firstStop = route.stops[0].name;
@@ -22,9 +23,9 @@ REGULAR_ROUTES.forEach((route) => {
 });
 
 export const VARIABLE_ROUTES = [
-  { route: 'J03', aliases: ['J03', 'J03-A', 'J03-B'], capacity: 48, label: 'Configuração variável · baixa demanda esperada' },
-  { route: 'P06', aliases: ['P06', 'P06-B'], capacity: 48, label: 'Configuração variável · baixa demanda esperada' },
-  { route: 'P08', aliases: ['P08'], capacity: 48, label: 'Configuração variável · baixa demanda esperada' },
+  { route: 'J03', city: 'Juazeiro', aliases: ['J03', 'J03-A', 'J03-B'], capacity: 48, label: 'Configuração variável · baixa demanda esperada' },
+  { route: 'P06', city: 'Petrolina', aliases: ['P06', 'P06-B'], capacity: 48, label: 'Configuração variável · baixa demanda esperada' },
+  { route: 'P08', city: 'Petrolina', aliases: ['P08'], capacity: 48, label: 'Configuração variável · baixa demanda esperada' },
 ];
 
 export const ROUTE_FAMILIES = [...REGULAR_ROUTES, ...VARIABLE_ROUTES];
