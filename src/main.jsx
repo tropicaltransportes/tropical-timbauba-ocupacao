@@ -199,10 +199,20 @@ function App() {
   );
   const [expandedRoutes, setExpandedRoutes] = useState(() => new Set());
   const [selectedOccupancyRoute, setSelectedOccupancyRoute] = useState(null);
+  const [selectedTypes, setSelectedTypes] = useState(["regular", "variable"]);
+  const [selectedCities, setSelectedCities] = useState([]);
+
+  const filteredRows = useMemo(() => {
+    return rows.filter(
+      (row) =>
+        selectedTypes.includes(row.category) &&
+        (selectedCities.length === 0 || selectedCities.includes(row.city)),
+    );
+  }, [rows, selectedTypes, selectedCities]);
 
   const summary = useMemo(() => {
-    const regular = rows.filter((row) => row.category === "regular");
-    const variable = rows.filter((row) => row.category === "variable");
+    const regular = filteredRows.filter((row) => row.category === "regular");
+    const variable = filteredRows.filter((row) => row.category === "variable");
     const totalUsed = regular.reduce((sum, row) => sum + row.used, 0);
     const totalCapacity = regular.reduce((sum, row) => sum + row.capacity, 0);
     const variableUsed = variable.reduce((sum, row) => sum + row.used, 0);
@@ -223,13 +233,44 @@ function App() {
       variableCapacity,
       overallUsed,
       overallCapacity,
+      regularAverage: totalCapacity
+        ? Math.round((totalUsed / totalCapacity) * 100)
+        : 0,
+      variableAverage: variableCapacity
+        ? Math.round((variableUsed / variableCapacity) * 100)
+        : 0,
       comfortable: regular.filter((r) => r.occupancy <= 60).length,
       attention: regular.filter((r) => r.occupancy > 60 && r.occupancy <= 80)
         .length,
       high: regular.filter((r) => r.occupancy > 80 && r.occupancy <= 95).length,
       critical: regular.filter((r) => r.occupancy > 95).length,
     };
-  }, [rows]);
+  }, [filteredRows]);
+
+  const citySummary = useMemo(() => {
+    return ["Petrolina", "Juazeiro", "Lagoa Grande", "Nova Descoberta"].map(
+      (city) => {
+        const cityRows = filteredRows.filter((row) => row.city === city);
+        const used = cityRows.reduce((sum, row) => sum + row.used, 0);
+        const capacity = cityRows.reduce((sum, row) => sum + row.capacity, 0);
+        return {
+          city,
+          routes: cityRows.length,
+          used,
+          capacity,
+          occupancy: capacity ? Math.round((used / capacity) * 100) : 0,
+        };
+      },
+    );
+  }, [filteredRows]);
+
+  function toggleSelection(value, setter, selected) {
+    setter(
+      selected.includes(value)
+        ? selected.filter((item) => item !== value)
+        : [...selected, value],
+    );
+  }
 
   async function refresh() {
     setLoading(true);
@@ -353,8 +394,125 @@ function App() {
                 </div>
                 <Info size={17} />
               </div>
+              <div className="occupancy-filters">
+                <div className="filter-group">
+                  <span>Tipo de rota</span>
+                  {[
+                    ["regular", "Regulares"],
+                    ["variable", "Variáveis"],
+                  ].map(([value, label]) => (
+                    <button
+                      type="button"
+                      className={
+                        selectedTypes.includes(value)
+                          ? "filter-chip active"
+                          : "filter-chip"
+                      }
+                      key={value}
+                      onClick={() =>
+                        toggleSelection(value, setSelectedTypes, selectedTypes)
+                      }
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="filter-group">
+                  <span>Origem</span>
+                  <button
+                    type="button"
+                    className={
+                      selectedCities.length === 0
+                        ? "filter-chip active"
+                        : "filter-chip"
+                    }
+                    onClick={() => setSelectedCities([])}
+                  >
+                    Todas
+                  </button>
+                  {[
+                    "Petrolina",
+                    "Juazeiro",
+                    "Lagoa Grande",
+                    "Nova Descoberta",
+                  ].map((city) => (
+                    <button
+                      type="button"
+                      className={
+                        selectedCities.includes(city)
+                          ? "filter-chip active"
+                          : "filter-chip"
+                      }
+                      key={city}
+                      onClick={() =>
+                        toggleSelection(city, setSelectedCities, selectedCities)
+                      }
+                    >
+                      {city}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="occupancy-metrics">
+                <div className="metric-card">
+                  <small>Rotas regulares</small>
+                  <strong>{summary.regularAverage}%</strong>
+                  <span>
+                    {summary.totalUsed} passageiros / {summary.totalCapacity}{" "}
+                    lugares
+                  </span>
+                </div>
+                <div className="metric-card variable">
+                  <small>Rotas variáveis</small>
+                  <strong>{summary.variableAverage}%</strong>
+                  <span>
+                    {summary.variableUsed} passageiros /{" "}
+                    {summary.variableCapacity} lugares
+                  </span>
+                </div>
+                <div className="metric-card">
+                  <small>Rotas exibidas</small>
+                  <strong>{filteredRows.length}</strong>
+                  <span>{summary.overallUsed} passageiros transportados</span>
+                </div>
+              </div>
+              <div className="city-summary">
+                <div className="city-summary-heading">
+                  <strong>Ocupação por cidade de origem</strong>
+                  <span>
+                    Percentual calculado conforme os filtros selecionados.
+                  </span>
+                </div>
+                <div className="city-summary-grid">
+                  {citySummary
+                    .filter((item) => item.routes > 0)
+                    .map((item) => {
+                      const [, kind] = statusFor(item.occupancy);
+                      return (
+                        <div className="city-summary-row" key={item.city}>
+                          <span>
+                            <strong>{item.city}</strong>
+                            <small>
+                              {item.routes}{" "}
+                              {item.routes === 1 ? "rota" : "rotas"}
+                            </small>
+                          </span>
+                          <div className="compare-bar">
+                            <span
+                              className={`bar-fill ${kind}`}
+                              style={{ width: `${item.occupancy}%` }}
+                            ></span>
+                          </div>
+                          <b className={`occupancy-percent ${kind}`}>
+                            {item.occupancy}%
+                          </b>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
               <div className="occupancy-list">
-                {[...rows]
+                {[...filteredRows]
                   .sort((a, b) => b.occupancy - a.occupancy)
                   .map((row, index) => {
                     const [, kind] = statusFor(row.occupancy);
