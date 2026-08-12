@@ -29,6 +29,29 @@
 .route-card-top{gap:10px}
 .route-occupancy{min-width:52px;padding:6px 8px;border-radius:5px;text-align:center;font-size:17px;line-height:1}
 .route-city{display:block;margin-top:3px;color:#607068;font-size:11px;font-weight:700;letter-spacing:.02em}
+.occupancy-directory{margin-top:28px;overflow:hidden}
+.occupancy-directory .panel-heading{padding:24px 24px 18px;border-bottom:1px solid #e4ebe5}
+.occupancy-directory .panel-heading h2{font:800 22px Manrope;color:#0c4c2d;margin:0 0 7px}
+.panel-intro{font-size:12px;color:#6d7771;margin:0;line-height:1.45}
+.occupancy-list{padding:0 22px 10px}
+.occupancy-item{border-bottom:1px solid #e8eee9}
+.occupancy-item:last-child{border-bottom:0}
+.occupancy-row{width:100%;border:0;background:#fff;display:grid;grid-template-columns:28px minmax(160px,1fr) minmax(170px,1.4fr) 58px 20px;gap:16px;align-items:center;text-align:left;padding:15px 2px;cursor:pointer;color:#365246}
+.occupancy-row:hover,.occupancy-item.selected .occupancy-row{background:#f7fbe9}
+.occupancy-route-label{display:grid;gap:3px;min-width:0}
+.occupancy-route-label strong{font:800 16px Manrope;color:#0b5b31}
+.occupancy-route-label small{font-size:11px;color:#68766e}
+.occupancy-row .compare-bar{height:11px}
+.occupancy-percent{padding:6px 5px;border-radius:4px;text-align:center;font-size:14px;font-weight:800}
+.occupancy-percent.comfortable{background:#dff2e4;color:#16843d}
+.occupancy-percent.attention{background:#eef5c7;color:#708600}
+.occupancy-percent.high{background:#fff0d0;color:#c17600}
+.occupancy-percent.critical{background:#ffe0df;color:#d84040}
+.occupancy-detail{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:0 0 15px 44px;padding:13px 15px;border-left:3px solid var(--lime);background:#f7fbe9}
+.occupancy-detail span{display:grid;gap:4px}
+.occupancy-detail small{color:#78857c;font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+.occupancy-detail strong{color:#17482e;font-size:12px}
+@media(max-width:700px){.occupancy-directory .panel-heading{padding:20px 16px 16px}.occupancy-list{padding:0 14px 8px}.occupancy-row{grid-template-columns:25px 1fr 52px 17px;gap:9px;padding:13px 0}.occupancy-row .compare-bar{grid-column:2 / -1;grid-row:2}.occupancy-detail{grid-template-columns:1fr;margin-left:34px;gap:10px;padding:12px}.occupancy-percent{font-size:13px}}
 .route-occupancy.comfortable{background:#dff2e4;color:#16843d}
 .route-occupancy.attention{background:#eef5c7;color:#708600}
 .route-occupancy.high{background:#fff0d0;color:#c17600}
