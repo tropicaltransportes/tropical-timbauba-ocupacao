@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { Activity, Building2, CalendarDays, ChevronRight, CircleHelp, FileText, Info, LineChart, RefreshCw, Settings2 } from 'lucide-react';
 import './styles.css';
 
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQmSWb0xEiK2x69xJMwkqgk70fkDoFWP5S20fIGw-eOCah9IvXpnc_0b39WVMRQwuBAKbxZ7NlctTum/pub?gid=0&single=true&output=csv';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQmSWb0xEiK2x69xJMwkqgk70fkDoFWP5S20fIGw-eOCah9IvXpnc_0b39WVMRQwuBAKbxZ7NlctTum/pub?gid=408305749&single=true&output=csv';
 const REFERENCE_CAPACITY = 48;
 
 const demoRows = [
