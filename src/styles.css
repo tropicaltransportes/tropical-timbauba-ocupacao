@@ -28,6 +28,7 @@
 .route-card.expanded{grid-column:span 2;border-color:#a9cbb0;box-shadow:0 8px 24px rgba(32,75,52,.08)}
 .route-card-top{gap:10px}
 .route-occupancy{min-width:52px;padding:6px 8px;border-radius:5px;text-align:center;font-size:17px;line-height:1}
+.route-city{display:block;margin-top:3px;color:#607068;font-size:11px;font-weight:700;letter-spacing:.02em}
 .route-occupancy.comfortable{background:#dff2e4;color:#16843d}
 .route-occupancy.attention{background:#eef5c7;color:#708600}
 .route-occupancy.high{background:#fff0d0;color:#c17600}
