@@ -44,4 +44,7 @@ npm run preview
 
 - O arquivo `package-lock.json` acompanha o projeto para reproduzir as versões corretas das dependências.
 - A pasta `node_modules` não é incluída no `.zip`, pois ela é específica do sistema operacional e é criada automaticamente pelo comando `npm install`.
-- O painel começa com dados demonstrativos e consulta os dados publicados ao clicar em **Atualizar dados**.
+- A fonte oficial é o CSV público normalizado da operação; o painel filtra exclusivamente o contrato `TIMBAÚBA`.
+- Ao abrir, o painel consulta automaticamente o arquivo e considera a leitura mais recente de cada rota.
+- Como o CSV informa passageiros transportados, mas não uma coluna de capacidade, o percentual usa 48 lugares como capacidade operacional de referência.
+- Se a planilha estiver indisponível, o painel mantém a última leitura disponível.

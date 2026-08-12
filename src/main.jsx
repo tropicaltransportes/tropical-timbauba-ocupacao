@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Activity, Building2, CalendarDays, ChevronRight, CircleHelp, FileText, Info, LineChart, RefreshCw, Settings2 } from 'lucide-react';
 import './styles.css';
 
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQmSWb0xEiK2x69xJMwkqgk70fkDoFWP5S20fIGw-eOCah9IvXpnc_0b39WVMRQwuBAKbxZ7NlctTum/pub?output=csv';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQmSWb0xEiK2x69xJMwkqgk70fkDoFWP5S20fIGw-eOCah9IvXpnc_0b39WVMRQwuBAKbxZ7NlctTum/pub?gid=0&single=true&output=csv';
+const REFERENCE_CAPACITY = 48;
 
 const demoRows = [
   ['101', 'Timbaúba / Recife (PE-041)', '41', '50', '82%'],
@@ -33,6 +34,12 @@ function parseCsv(text) {
 const normalize = (value = '') => value.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 const pick = (object, names) => { const key = Object.keys(object).find((item) => names.some((name) => normalize(item).includes(normalize(name)))); return key ? object[key] : ''; };
 const toNumber = (value) => Number(String(value ?? '').replace('%', '').replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]/g, '')) || 0;
+const parseTimestamp = (value = '') => {
+  const match = String(value).match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/);
+  return match ? new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]), Number(match[4]), Number(match[5]), Number(match[6])) : null;
+};
+const formatDate = (date) => date ? date.toLocaleDateString('pt-BR') : '';
+const formatTime = (date) => date ? date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
 
 function rowsFromCsv(text) {
   const rows = parseCsv(text); if (rows.length < 2) return [];
@@ -41,17 +48,31 @@ function rowsFromCsv(text) {
 }
 
 function transformRows(raw) {
-  const timbauba = raw.filter((row) => normalize(Object.values(row).join(' ')).includes('timbauba'));
-  return timbauba.map((row, index) => {
-    const label = pick(row, ['rota', 'percurso', 'linha', 'trecho', 'contrato']) || `Linha ${index + 1}`;
-    const route = pick(row, ['rota', 'linha', 'código', 'codigo']) || String(index + 1).padStart(2, '0');
-    const used = toNumber(pick(row, ['passageiros', 'ocupacao corrigida', 'ocupação']));
-    const capacity = toNumber(pick(row, ['capacidade', 'lugares', 'lotação'])) || 0;
-    let occupancy = toNumber(pick(row, ['ocupação', 'ocupacao', '%']));
-    if (occupancy > 0 && occupancy <= 1) occupancy *= 100;
-    if (!occupancy && capacity) occupancy = Math.round((used / capacity) * 100);
-    return { route: String(route), label: String(label), used, capacity, occupancy: Math.min(100, occupancy) };
-  }).filter((row) => row.occupancy > 0 || row.used > 0);
+  const timbauba = raw.filter((row) => normalize(pick(row, ['contrato'])) === 'timbauba');
+  const latestByRoute = new Map();
+
+  timbauba.forEach((row) => {
+    const route = String(pick(row, ['rota']) || '').trim();
+    const timestamp = parseTimestamp(pick(row, ['carimbo de data/hora', 'data e hora', 'timestamp']));
+    if (!route || !timestamp) return;
+    const current = latestByRoute.get(route);
+    if (!current || timestamp > current.timestamp) latestByRoute.set(route, { row, timestamp });
+  });
+
+  return [...latestByRoute.values()].sort((a, b) => a.row.Rota.localeCompare(b.row.Rota, 'pt-BR', { numeric: true })).map(({ row, timestamp }, index) => {
+    const route = String(pick(row, ['rota']) || `Linha ${index + 1}`).trim();
+    const used = toNumber(pick(row, ['passageiros transportados', 'passageiros']));
+    const capacity = REFERENCE_CAPACITY;
+    return {
+      route,
+      label: `${pick(row, ['sentido do percurso', 'sentido']) || 'Leitura mais recente'} · ${pick(row, ['nome do condutor', 'condutor']) || 'Condutor não informado'}`,
+      used,
+      capacity,
+      occupancy: Math.min(100, Math.round((used / capacity) * 100)),
+      timestamp,
+      vehicle: pick(row, ['veículo', 'veiculo']),
+    };
+  }).filter((row) => row.used >= 0);
 }
 
 function statusFor(value) {
@@ -64,10 +85,10 @@ function statusFor(value) {
 function App() {
   const [rows, setRows] = useState(demoRows);
   const [activeTab, setActiveTab] = useState('Ocupação Timbaúba');
-  const [selectedDate, setSelectedDate] = useState('23/05/2025');
-  const [updatedAt, setUpdatedAt] = useState('08:45');
+  const [selectedDate, setSelectedDate] = useState(formatDate(new Date()));
+  const [updatedAt, setUpdatedAt] = useState('--:--');
   const [loading, setLoading] = useState(false);
-  const [notice, setNotice] = useState('Dados de demonstração carregados. Atualize para consultar a planilha publicada.');
+  const [notice, setNotice] = useState('Consultando automaticamente a planilha publicada…');
 
   const summary = useMemo(() => {
     const totalUsed = rows.reduce((sum, row) => sum + row.used, 0);
@@ -83,11 +104,14 @@ function App() {
       if (!response.ok) throw new Error('Falha ao consultar a planilha');
       const parsed = transformRows(rowsFromCsv(await response.text()));
       if (!parsed.length) throw new Error('Nenhum registro de Timbaúba encontrado');
-      setRows(parsed); setNotice('Dados atualizados a partir da planilha pública do Google Sheets.'); setUpdatedAt(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+      const latestTimestamp = parsed.reduce((latest, row) => row.timestamp > latest ? row.timestamp : latest, parsed[0].timestamp);
+      setRows(parsed); setNotice(`Dados atualizados a partir do CSV normalizado. Capacidade de referência: ${REFERENCE_CAPACITY} lugares por veículo.`); setSelectedDate(formatDate(latestTimestamp)); setUpdatedAt(formatTime(latestTimestamp));
     } catch (error) {
       setNotice('Não foi possível ler a planilha agora. Exibindo a última leitura disponível.');
     } finally { setLoading(false); }
   }
+
+  useEffect(() => { refresh(); }, []);
 
   return <div className="app-shell">
     <aside className="sidebar">
@@ -100,7 +124,7 @@ function App() {
       <header className="topbar"><div className="topbar-title"><Building2 size={20} /><strong>OPERAÇÃO TIMBAÚBA</strong><i></i><span>Monitor público de ocupação</span></div><button className="refresh-top" onClick={refresh} disabled={loading}><RefreshCw size={18} className={loading ? 'spin' : ''} /> Atualizar dados</button></header>
       <section className="content">
         <div className="update-line"><span><span className="status-dot"></span>Dados atualizados em <strong>{selectedDate} {updatedAt}</strong> <em>(há poucos instantes)</em></span></div>
-        <div className="heading-row"><div><p className="eyebrow">VISÃO OPERACIONAL</p><h1>Timbaúba — ocupação atual</h1><p className="subtitle">Acompanhe a utilização das linhas da operação e identifique rapidamente onde existe maior pressão de lotação.</p></div><div className="date-control"><CalendarDays size={17} /><label>Data de referência<select value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}><option>23/05/2025</option><option>22/05/2025</option><option>21/05/2025</option></select></label></div></div>
+        <div className="heading-row"><div><p className="eyebrow">VISÃO OPERACIONAL</p><h1>Timbaúba — ocupação atual</h1><p className="subtitle">Acompanhe a utilização das linhas da operação e identifique rapidamente onde existe maior pressão de lotação.</p></div><div className="date-control"><CalendarDays size={17} /><label>Data de referência<strong>{selectedDate}</strong></label></div></div>
         {activeTab === 'Ocupação Timbaúba' && <>
           <section className="overview-card"><div className="gauge-block"><div className="gauge" style={{ '--gauge': `${summary.average * 1.8}deg` }}><div className="gauge-value">{summary.average}%</div></div><div className="gauge-caption"><strong>da capacidade total</strong><span>{summary.totalUsed.toLocaleString('pt-BR')} passageiros / {summary.totalCapacity.toLocaleString('pt-BR')} lugares</span></div></div><div className="divider"></div><div className="situation"><h3>SITUAÇÃO GERAL</h3>{[['comfortable', 'Confortável (até 60%)', summary.comfortable], ['attention', 'Atenção (61% a 80%)', summary.attention], ['high', 'Alta ocupação (81% a 95%)', summary.high], ['critical', 'Crítica (acima de 95%)', summary.critical]].map(([key, label, count]) => <div className="situation-row" key={key}><span className={`legend-dot ${key}`}></span><span>{label}</span><b>{count} {count === 1 ? 'linha' : 'linhas'}</b></div>)}</div></section>
           <section className="lower-grid"><div className="line-list panel"><div className="panel-heading"><h2>SELECIONE UMA LINHA</h2><Settings2 size={17} /></div>{rows.map((row, index) => { const [, kind] = statusFor(row.occupancy); return <button className={index === 0 ? 'line-row selected' : 'line-row'} key={`${row.route}-${index}`}><span className="line-number">{index + 1}</span><span className="line-name"><strong>{row.route}</strong><small>{row.label}</small></span><b className={`line-percent ${kind}`}>{row.occupancy}%</b><ChevronRight size={17} /></button> })}<button className="see-all">Ver todas as linhas <ChevronRight size={16} /></button></div><div className="comparison panel"><div className="panel-heading"><h2>COMPARATIVO DE OCUPAÇÃO POR LINHA</h2><Info size={17} /></div>{[...rows].sort((a, b) => b.occupancy - a.occupancy).map((row) => { const [, kind] = statusFor(row.occupancy); return <div className="compare-row" key={`compare-${row.route}`}><span className="compare-label"><strong>{row.route}</strong><span>{row.label}</span></span><div className="compare-bar"><span className={`bar-fill ${kind}`} style={{ width: `${row.occupancy}%` }}></span></div><b className={kind}>{row.occupancy}%</b></div> })}<div className="legend"><span><i className="comfortable"></i>Confortável (até 60%)</span><span><i className="attention"></i>Atenção (61% a 80%)</span><span><i className="high"></i>Alta (81% a 95%)</span><span><i className="critical"></i>Crítica (acima de 95%)</span></div></div></section>
